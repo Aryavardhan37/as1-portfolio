@@ -18,6 +18,11 @@ export function createMaterials() {
     lid: new THREE.MeshStandardMaterial({ color: 0xa6abb1, metalness: 1, roughness: 0.3 }),
     passiv: new THREE.MeshPhysicalMaterial({ color: 0x6d7f73, metalness: 0, roughness: 0.4, transparent: true, opacity: 0.35, depthWrite: false }),
     ild: new THREE.MeshPhysicalMaterial({ color: 0x9fb3c8, metalness: 0, roughness: 0.2, transparent: true, opacity: 0.07, depthWrite: false }),
+
+    // Only visible while the package is assembled: solid die sidewall + epoxy underfill fillet.
+    dieShell: new THREE.MeshStandardMaterial({ color: 0x1b1e26, metalness: 0.55, roughness: 0.35, transparent: true }),
+    underfill: new THREE.MeshStandardMaterial({ color: 0x24262b, metalness: 0.05, roughness: 0.85, flatShading: true, transparent: true }),
+
     edge: new THREE.LineBasicMaterial({ color: 0xece8e1, transparent: true, opacity: 0.16 }),
     edgeHi: new THREE.LineBasicMaterial({ color: 0xc8814a, transparent: true, opacity: 0.45 }),
   };

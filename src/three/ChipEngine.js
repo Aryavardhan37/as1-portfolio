@@ -21,6 +21,7 @@ export class ChipEngine {
     this.canvas.className = "scene";
     this.canvas.setAttribute("aria-hidden", "true");
     host.appendChild(this.canvas);
+
     this.labelsEl = labelsEl;
     this.sections = sections;
     this.reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -51,9 +52,15 @@ export class ChipEngine {
     window.addEventListener("pointermove", this.onPointer);
   }
 
+  // Render at ≥1.5× even on standard (DPR 1) monitors — supersampling keeps the
+  // thin copper traces and the lid marking crisp instead of soft / shimmering.
+  get pixelRatio() {
+    return Math.min(Math.max(window.devicePixelRatio || 1, 1.5), 2);
+  }
+
   #initRenderer() {
     const r = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, powerPreference: "high-performance" });
-    r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    r.setPixelRatio(this.pixelRatio);
     r.setSize(window.innerWidth, window.innerHeight);
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;
@@ -84,7 +91,10 @@ export class ChipEngine {
     this.grid.material.opacity = 0.35;
     scene.add(this.grid);
 
-    this.chip = buildChip(createMaterials(), chipOptions);
+    this.chip = buildChip(createMaterials(), {
+      ...chipOptions,
+      anisotropy: this.renderer.capabilities.getMaxAnisotropy(),
+    });
     this.chip.root.scale.setScalar(CHIP_SCALE);
     scene.add(this.chip.root);
 
@@ -133,6 +143,7 @@ export class ChipEngine {
   }
 
   resize() {
+    this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();

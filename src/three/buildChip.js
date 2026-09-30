@@ -11,10 +11,12 @@ import { createLidTexture } from "./lidTexture.js";
  * crossing between a track on its own layer and an orthogonal track on the
  * layer below, and stretches with the explode gap so it always lands on metal.
  *
- * Assembled (e = 0) the die layers are squashed to a realistic flat profile;
- * they grow to full "exploded-view" thickness as the stack opens up.
+ * Assembled (e ≈ 0) it looks like a real closed package: die layers squashed
+ * flat, a solid die sidewall and an epoxy underfill fillet hide the internals.
+ * As the stack opens, the shell fades out and every layer grows to full
+ * "exploded-view" thickness.
  */
-export function buildChip(M, { mark = "AS·1", lidLines = [] } = {}) {
+export function buildChip(M, { mark = "AS·1", lidLines = [], anisotropy = 8 } = {}) {
   const rand = createRng(20260930);
   const BOX = new THREE.BoxGeometry(1, 1, 1);
   const VIA = new THREE.BoxGeometry(1, 1, 1).translate(0, -0.5, 0); // top at y=0, extends down
@@ -25,12 +27,16 @@ export function buildChip(M, { mark = "AS·1", lidLines = [] } = {}) {
   const SPACING = 0.62; // explode gap per layer at e = 1
 
   // Thickness multiplier per layer when fully assembled (1 = never squashed).
-  // Die layers go very thin so the closed package reads as a flat chip.
   const FLAT = {
-    RDL: 0.2, M8: 0.2, M7: 0.2, M6: 0.2, M5: 0.2, M4: 0.2, M3: 0.2, M2: 0.2, M1: 0.2,
-    FEOL: 0.2, Si: 0.2, TIM: 0.2, LID: 0.45,
+    C4: 0.55, RDL: 0.2,
+    M8: 0.2, M7: 0.2, M6: 0.2, M5: 0.2, M4: 0.2, M3: 0.2, M2: 0.2, M1: 0.2,
+    FEOL: 0.2, Si: 0.2, TIM: 0.2, LID: 0.4,
   };
   const FLAT_BLEND_END = 0.5; // explode amount at which layers reach full thickness
+  const SHELL_FADE_END = 0.12; // explode amount at which the die shell / underfill are gone
+
+  // Layers whose internals are hidden inside the die shell when assembled.
+  const INTERNAL = new Set(["RDL", "M8", "M7", "M6", "M5", "M4", "M3", "M2", "M1", "FEOL", "Si", "TIM"]);
 
   const layers = [];
   const addLayer = (code, name, t, group, extent, extra = {}) =>
@@ -38,6 +44,7 @@ export function buildChip(M, { mark = "AS·1", lidLines = [] } = {}) {
       code, name, t, group, extent,
       segs: null, dir: null, via: null, viaTop: 0,
       flat: FLAT[code] ?? 1,
+      edges: group.userData.edges ?? null,
       ...extra,
     });
 
@@ -49,6 +56,7 @@ export function buildChip(M, { mark = "AS·1", lidLines = [] } = {}) {
     const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeMat);
     edges.position.y = h / 2;
     g.add(mesh, edges);
+    g.userData.edges = edges;
     return g;
   };
 
@@ -92,7 +100,7 @@ export function buildChip(M, { mark = "AS·1", lidLines = [] } = {}) {
   {
     const g = new THREE.Group();
     const n = 12, p = 0.55;
-    const im = new THREE.InstancedMesh(new THREE.SphereGeometry(0.19, 20, 14), M.solder, n * n);
+    const im = new THREE.InstancedMesh(new THREE.SphereGeometry(0.19, 24, 16), M.solder, n * n);
     let k = 0;
     for (let i = 0; i < n; i++)
       for (let j = 0; j < n; j++) place(im, k++, (i - (n - 1) / 2) * p, 0.19, (j - (n - 1) / 2) * p);
@@ -199,13 +207,19 @@ export function buildChip(M, { mark = "AS·1", lidLines = [] } = {}) {
   /* 15 · Lid / integrated heat spreader with etched marking */
   {
     const g = slab(5.4, 0.26, 5.4, M.lid);
-    const alphaMap = createLidTexture({ mark, lines: lidLines });
+    const alphaMap = createLidTexture({ mark, lines: lidLines, anisotropy });
     const etch = new THREE.Mesh(
       new THREE.PlaneGeometry(4.6, 4.6),
-      new THREE.MeshStandardMaterial({ color: 0x2a2c30, metalness: 0.6, roughness: 0.6, alphaMap, transparent: true })
+      new THREE.MeshStandardMaterial({
+        color: 0x1f2126, metalness: 0.5, roughness: 0.65,
+        alphaMap, transparent: true, depthWrite: false,
+        // Pull the marking toward the camera so it never z-fights with the lid top.
+        polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+      })
     );
-    etch.rotation.x = -Math.PI / 2;
-    etch.position.y = 0.261;
+    // Lay flat, and turn 180° so the marking reads upright from the hero camera.
+    etch.rotation.set(-Math.PI / 2, 0, Math.PI);
+    etch.position.y = 0.26;
     g.add(etch);
     addLayer("LID", "Integrated heat spreader", 0.26, g, 2.7);
   }
@@ -238,11 +252,25 @@ export function buildChip(M, { mark = "AS·1", lidLines = [] } = {}) {
     up.via = im;
   }
 
+  /* Assembled-state shell: solid die sidewall + underfill fillet */
+  const shell = new THREE.Group();
+  const dieShell = new THREE.Mesh(new THREE.BoxGeometry(DIE + 0.02, 1, DIE + 0.02).translate(0, 0.5, 0), M.dieShell);
+  // Square frustum (4-sided cylinder turned 45°): wide at the substrate, die-sized at the top.
+  const R = Math.SQRT2;
+  const underfill = new THREE.Mesh(
+    new THREE.CylinderGeometry((DIE / 2 + 0.03) * R, (DIE / 2 + 0.32) * R, 1, 4, 1).rotateY(Math.PI / 4).translate(0, 0.5, 0),
+    M.underfill
+  );
+  shell.add(dieShell, underfill);
+
   /* Assemble */
   const root = new THREE.Group();
   const stack = new THREE.Group();
   root.add(stack);
   layers.forEach((L) => stack.add(L.group));
+  stack.add(shell);
+
+  const idx = Object.fromEntries(layers.map((L, i) => [L.code, i]));
 
   /**
    * Positions every layer for explode amount e (0..1). Returns total stack height.
@@ -257,10 +285,27 @@ export function buildChip(M, { mark = "AS·1", lidLines = [] } = {}) {
       const k = lerp(L.flat, 1, f);
       L.group.scale.y = k;
       L.group.position.y = y + gap * i;
-      // via length in this layer's local (scaled) units
+      L.bottom = L.group.position.y;
+      L.top = L.bottom + L.t * k;
       if (L.via) L.via.scale.y = L.viaTop + gap / k + 0.004;
       y += L.t * k;
     });
+
+    // Shell: fully opaque when closed, gone by SHELL_FADE_END.
+    const o = 1 - smoothstep(clamp(e / SHELL_FADE_END, 0, 1));
+    shell.visible = o > 0.01;
+    M.dieShell.opacity = M.underfill.opacity = o;
+    M.dieShell.depthWrite = M.underfill.depthWrite = o > 0.98;
+    if (shell.visible) {
+      const rdl = layers[idx.RDL], si = layers[idx.Si], c4 = layers[idx.C4];
+      dieShell.position.y = rdl.bottom;
+      dieShell.scale.y = si.top - rdl.bottom;
+      underfill.position.y = c4.bottom;
+      underfill.scale.y = Math.max(0.001, rdl.bottom - c4.bottom + (si.top - rdl.bottom) * 0.35);
+    }
+    // Hide the stacked edge outlines of internal layers while closed — they shimmer as a fuzzy band.
+    for (const L of layers) if (INTERNAL.has(L.code) && L.edges) L.edges.visible = o < 0.5;
+
     const h = y + gap * (layers.length - 1);
     stack.position.y = -h / 2;
     return h;
