@@ -1,0 +1,40 @@
+*,
+*::before,
+*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+a { color: inherit; text-decoration: none; }
+::selection { background: var(--accent); color: var(--bg); }
+
+h1, h2, h3 { font-family: var(--display); font-weight: 400; letter-spacing: -0.03em; line-height: 0.95; }
+h1 { font-size: clamp(52px, 7.2vw, 112px); font-weight: 300; }
+h2 { font-size: clamp(40px, 5vw, 72px); font-weight: 300; margin-bottom: 22px; }
+h3 { font-size: 20px; letter-spacing: -0.01em; line-height: 1.2; font-weight: 500; }
+h1 span, h2 span { color: var(--ink3); }
+p { color: var(--ink2); }
+
+.mono {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+
+/* Scroll reveal */
+.rv { opacity: 0; transform: translateY(28px); transition: opacity 1s var(--ease), transform 1s var(--ease); }
+.rv.in { opacity: 1; transform: none; }
+.rv.d1 { transition-delay: 0.08s; }
+.rv.d2 { transition-delay: 0.16s; }
+.rv.d3 { transition-delay: 0.24s; }

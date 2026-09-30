@@ -1,0 +1,22 @@
+/* Design tokens — change the whole palette from here. */
+:root {
+  --bg: #0c0d0f;
+  --bg2: #121417;
+  --panel: rgba(14, 15, 18, 0.74);
+  --ink: #ece8e1;
+  --ink2: #a9a59d;
+  --ink3: #6d6a65;
+  --rule: rgba(236, 232, 225, 0.12);
+  --rule2: rgba(236, 232, 225, 0.22);
+  --accent: #c8814a; /* copper */
+  --steel: #8fa3b8;
+  --ok: #7fb38a;
+
+  --display: "Inter Tight", system-ui, sans-serif;
+  --body: "Inter", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --ease: cubic-bezier(0.2, 0.72, 0.24, 1);
+
+  --gutter: 88px;
+  --frame: 16px;
+}

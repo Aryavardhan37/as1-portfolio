@@ -1,0 +1,111 @@
+/* ── Hero ─────────────────────────────────────────── */
+.lede { font-size: 17px; color: var(--ink2); max-width: 46ch; margin: 26px 0 30px; }
+.hero .strip {
+  display: grid; grid-template-columns: repeat(4, auto); gap: 28px;
+  border-top: 1px solid var(--rule); padding-top: 18px; margin-bottom: 34px;
+}
+.hero .strip div { display: grid; gap: 4px; }
+.hero .strip b { font-family: var(--display); font-weight: 500; font-size: 14px; color: var(--ink); }
+.tag {
+  position: absolute; left: var(--gutter); bottom: 110px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; color: var(--ink3); text-transform: uppercase;
+}
+.tag b { color: var(--ink); font-weight: 400; }
+
+/* ── Anatomy ──────────────────────────────────────── */
+#anatomy h2 { font-size: clamp(38px, 4.4vw, 64px); }
+.groups { display: grid; border-top: 1px solid var(--rule); margin-top: 26px; }
+.groups > div { display: grid; grid-template-columns: 90px 1fr; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--rule); }
+.groups b { font-family: var(--mono); font-weight: 400; font-size: 11px; letter-spacing: 0.12em; color: var(--accent); padding-top: 3px; }
+.groups span { color: var(--ink2); font-size: 14px; }
+.groups strong { color: var(--ink); font-weight: 500; }
+.hint { margin-top: 22px; }
+
+/* ── Spec ─────────────────────────────────────────── */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--rule); margin: 8px 0 26px; }
+.stats > div { padding: 18px 16px; border-right: 1px solid var(--rule); }
+.stats > div:last-child { border-right: 0; }
+.stats b { display: block; font-family: var(--display); font-weight: 300; font-size: 36px; letter-spacing: -0.03em; color: var(--ink); line-height: 1; }
+.stats span { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink3); }
+
+table.spec { width: 100%; border-collapse: collapse; }
+table.spec td { padding: 11px 0; border-bottom: 1px solid var(--rule); vertical-align: top; font-size: 14px; }
+table.spec td:first-child {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink3); width: 38%; padding-top: 13px;
+}
+table.spec td:last-child { color: var(--ink); }
+
+.chips { display: grid; gap: 14px; margin-top: 26px; }
+.chips .row { display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: start; }
+.chips .row > span { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink3); padding-top: 5px; }
+.chips ul { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.chips li { font-size: 12.5px; padding: 4px 10px; border: 1px solid var(--rule2); color: var(--ink); }
+
+/* ── Experience ───────────────────────────────────── */
+.rev { border-top: 1px solid var(--rule); }
+.rev article { display: grid; grid-template-columns: 78px 1fr; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--rule); }
+.rev .r { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; color: var(--accent); }
+.rev .r small { display: block; color: var(--ink3); font-size: 10px; margin-top: 6px; }
+.rev h3 { margin-bottom: 4px; }
+.rev .org { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); margin-bottom: 12px; }
+.rev ul { list-style: none; display: grid; gap: 6px; }
+.rev li { position: relative; padding-left: 18px; color: var(--ink2); font-size: 14px; }
+.rev li::before { content: ""; position: absolute; left: 0; top: 11px; width: 8px; height: 1px; background: var(--accent); }
+.rev .cur {
+  display: inline-block; margin-left: 10px; padding: 1px 6px; vertical-align: middle;
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.14em; border: 1px solid var(--accent); color: var(--accent);
+}
+
+/* ── Work ─────────────────────────────────────────── */
+.flow { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--rule); margin-bottom: 28px; }
+.flow > div { padding: 16px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); min-height: 112px; }
+.flow > div:nth-child(3n) { border-right: 0; }
+.flow > div:nth-last-child(-n + 3) { border-bottom: 0; }
+.flow b { font-family: var(--mono); font-weight: 400; font-size: 10.5px; color: var(--accent); letter-spacing: 0.12em; }
+.flow h3 { font-size: 16px; margin: 8px 0 6px; }
+.flow p { font-size: 12.5px; line-height: 1.5; }
+.mono.sub { margin-bottom: 10px; }
+
+.proj { border-top: 1px solid var(--rule); }
+.proj a, .proj .item {
+  display: grid; grid-template-columns: 34px 1fr auto; gap: 14px; padding: 16px 0;
+  border-bottom: 1px solid var(--rule); transition: padding 0.35s var(--ease);
+}
+.proj a:hover { padding-left: 10px; }
+.proj a:hover h3 { color: var(--accent); }
+.proj .n { font-family: var(--mono); font-size: 11px; color: var(--ink3); padding-top: 3px; }
+.proj h3 { font-size: 17px; transition: color 0.3s; }
+.proj p { font-size: 13px; margin-top: 4px; }
+.proj .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink3); text-align: right; padding-top: 4px; }
+
+/* ── Publications ─────────────────────────────────── */
+.pubs { display: grid; gap: 12px; }
+.pub { display: grid; grid-template-columns: 1fr auto; gap: 18px; padding: 22px; border: 1px solid var(--rule); transition: border-color 0.35s, background 0.35s; }
+.pub:hover { border-color: var(--accent); background: rgba(200, 129, 74, 0.05); }
+.pub .type { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; }
+.pub .v { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); margin-top: 10px; }
+.pub .y { font-family: var(--display); font-weight: 300; font-size: 30px; color: var(--ink3); line-height: 1; }
+
+/* ── Recognition ──────────────────────────────────── */
+.rec { border-top: 1px solid var(--rule); }
+.rec > div { display: grid; grid-template-columns: 1fr auto; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.rec h3 { font-size: 16px; }
+.rec p { font-size: 13px; margin-top: 2px; }
+.rec span { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--accent); text-transform: uppercase; white-space: nowrap; }
+
+/* ── Contact ──────────────────────────────────────── */
+.contact { text-align: center; width: min(760px, 100%); }
+.contact h2 { font-size: clamp(48px, 7vw, 112px); }
+.contact .mail {
+  display: inline-block; margin: 14px 0 40px; padding-bottom: 6px; border-bottom: 1px solid var(--accent);
+  font-family: var(--display); font-weight: 300; font-size: clamp(20px, 2.6vw, 34px); transition: color 0.3s;
+}
+.contact .mail:hover { color: var(--accent); }
+.links { display: flex; justify-content: center; border: 1px solid var(--rule); width: max-content; margin: 0 auto; }
+.links a {
+  padding: 14px 24px; border-right: 1px solid var(--rule); color: var(--ink2); transition: all 0.3s;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+}
+.links a:last-child { border-right: 0; }
+.links a:hover { color: var(--bg); background: var(--ink); }
