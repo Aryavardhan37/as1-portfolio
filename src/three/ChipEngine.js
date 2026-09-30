@@ -30,6 +30,7 @@ export class ChipEngine {
     this.tgt = { ...sections[0].scene };
     this.ptr = { x: 0, y: 0, sx: 0, sy: 0 };
     this.spin = 0;
+    this.t = 0;
     this.scrollFrac = 0;
     this.activeIdx = 0;
     this.raf = 0;
@@ -130,7 +131,7 @@ export class ChipEngine {
     const b = this.sections[j].scene;
     const span = Math.max(1, centers[j] - centers[i]);
     const f = mid < centers[0] ? 0 : smoothstep(clamp((mid - centers[i]) / span, 0, 1));
-    for (const k in a) this.tgt[k] = lerp(a[k], b[k], f);
+    for (const k in a) this.tgt[k] = lerp(a[k], b[k] ?? a[k], f);
 
     const max = document.documentElement.scrollHeight - window.innerHeight;
     this.scrollFrac = max > 0 ? clamp(window.scrollY / max, 0, 1) : 0;
@@ -170,8 +171,10 @@ export class ChipEngine {
     ptr.sy = lerp(ptr.sy, ptr.y, 1 - Math.exp(-dt * 3));
     if (!this.reduce) this.spin += dt * 0.07 * (1 - cur.e * 0.8);
 
-    // chip
-    const h = this.chip.layout(cur.e);
+    // chip — when the lid is lifted it hovers with a gentle bob
+    this.t += dt;
+    const lift = (cur.lift ?? 0) * (1 + (this.reduce ? 0 : 0.035 * Math.sin(this.t * 1.4)));
+    const h = this.chip.layout(cur.e, lift);
     const root = this.chip.root;
     root.rotation.y = cur.rot + this.spin + ptr.sx * 0.35;
     root.rotation.x = ptr.sy * 0.08;
