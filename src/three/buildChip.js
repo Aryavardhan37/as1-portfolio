@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { createRng } from "../lib/math.js";
+import { createRng, clamp, lerp, smoothstep } from "../lib/math.js";
 import { createLidTexture } from "./lidTexture.js";
 
 /**
@@ -10,6 +10,9 @@ import { createLidTexture } from "./lidTexture.js";
  * and M1 sits directly under the transistors. Every via is placed at a real
  * crossing between a track on its own layer and an orthogonal track on the
  * layer below, and stretches with the explode gap so it always lands on metal.
+ *
+ * Assembled (e = 0) the die layers are squashed to a realistic flat profile;
+ * they grow to full "exploded-view" thickness as the stack opens up.
  */
 export function buildChip(M, { mark = "AS·1", lidLines = [] } = {}) {
   const rand = createRng(20260930);
@@ -17,13 +20,26 @@ export function buildChip(M, { mark = "AS·1", lidLines = [] } = {}) {
   const VIA = new THREE.BoxGeometry(1, 1, 1).translate(0, -0.5, 0); // top at y=0, extends down
   const dummy = new THREE.Object3D();
 
-  const DIE = 4;      // die edge length
-  const HALF = 1.9;   // routable half-extent
+  const DIE = 4;        // die edge length
+  const HALF = 1.9;     // routable half-extent
   const SPACING = 0.62; // explode gap per layer at e = 1
+
+  // Thickness multiplier per layer when fully assembled (1 = never squashed).
+  // Die layers go very thin so the closed package reads as a flat chip.
+  const FLAT = {
+    RDL: 0.2, M8: 0.2, M7: 0.2, M6: 0.2, M5: 0.2, M4: 0.2, M3: 0.2, M2: 0.2, M1: 0.2,
+    FEOL: 0.2, Si: 0.2, TIM: 0.2, LID: 0.45,
+  };
+  const FLAT_BLEND_END = 0.5; // explode amount at which layers reach full thickness
 
   const layers = [];
   const addLayer = (code, name, t, group, extent, extra = {}) =>
-    layers.push({ code, name, t, group, extent, segs: null, dir: null, via: null, viaTop: 0, ...extra });
+    layers.push({
+      code, name, t, group, extent,
+      segs: null, dir: null, via: null, viaTop: 0,
+      flat: FLAT[code] ?? 1,
+      ...extra,
+    });
 
   const slab = (w, h, d, mat, edgeMat = M.edge) => {
     const g = new THREE.Group();
@@ -226,22 +242,26 @@ export function buildChip(M, { mark = "AS·1", lidLines = [] } = {}) {
   const root = new THREE.Group();
   const stack = new THREE.Group();
   root.add(stack);
-  let acc = 0;
-  layers.forEach((L) => {
-    L.base = acc;
-    acc += L.t;
-    stack.add(L.group);
-  });
-  const compactHeight = acc;
+  layers.forEach((L) => stack.add(L.group));
 
-  /** Positions every layer for explode amount e (0..1). Returns total stack height. */
+  /**
+   * Positions every layer for explode amount e (0..1). Returns total stack height.
+   * Each layer is scaled vertically by k (flat → full thickness); every via is
+   * stretched so it still spans exactly from its own tracks down to the layer below.
+   */
   const layout = (e) => {
     const gap = e * SPACING;
+    const f = smoothstep(clamp(e / FLAT_BLEND_END, 0, 1));
+    let y = 0;
     layers.forEach((L, i) => {
-      L.group.position.y = L.base + gap * i;
-      if (L.via) L.via.scale.y = L.viaTop + gap + 0.004;
+      const k = lerp(L.flat, 1, f);
+      L.group.scale.y = k;
+      L.group.position.y = y + gap * i;
+      // via length in this layer's local (scaled) units
+      if (L.via) L.via.scale.y = L.viaTop + gap / k + 0.004;
+      y += L.t * k;
     });
-    const h = compactHeight + gap * (layers.length - 1);
+    const h = y + gap * (layers.length - 1);
     stack.position.y = -h / 2;
     return h;
   };
