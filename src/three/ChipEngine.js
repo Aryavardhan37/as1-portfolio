@@ -2,20 +2,23 @@ import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { createMaterials } from "./materials.js";
 import { buildChip } from "./buildChip.js";
+import { buildWafer } from "./buildWafer.js";
 import { clamp, lerp, smoothstep } from "../lib/math.js";
 import { telemetry } from "../lib/telemetry.js";
 
 const BG = 0x0c0d0f;
 const CHIP_SCALE = 0.8;
+const SEALED = new THREE.Color(0x2b2f37); // closed-die body colour
+
+// 0..1 ramp of x between a and b, eased
+const ramp = (x, a, b) => smoothstep(clamp((x - a) / (b - a), 0, 1));
 
 /**
- * Owns the WebGL renderer, the chip, the scroll-driven camera and
- * the projected layer labels. React only mounts / disposes it.
+ * Owns the WebGL renderer, the wafer → die → package sequence,
+ * the scroll-driven camera and the projected layer labels.
  */
 export class ChipEngine {
   constructor({ host, labelsEl, sections, chipOptions }) {
-    // Each engine owns a fresh canvas + WebGL context. This keeps React StrictMode's
-    // mount → unmount → mount cycle from sharing (and corrupting) one context.
     this.host = host;
     this.canvas = document.createElement("canvas");
     this.canvas.className = "scene";
@@ -26,15 +29,17 @@ export class ChipEngine {
     this.sections = sections;
     this.reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    this.cur = { ...sections[0].scene };
-    this.tgt = { ...sections[0].scene };
+    const first = { w: 0, ...sections[0].scene };
+    this.cur = { ...first };
+    this.tgt = { ...first };
     this.ptr = { x: 0, y: 0, sx: 0, sy: 0 };
     this.spin = 0;
-    this.t = 0;
+    this.time = 0;
     this.scrollFrac = 0;
     this.activeIdx = 0;
     this.raf = 0;
     this.ready = false;
+    this.lastSeal = -1;
     this.v3 = new THREE.Vector3();
     this.camRight = new THREE.Vector3();
 
@@ -53,15 +58,9 @@ export class ChipEngine {
     window.addEventListener("pointermove", this.onPointer);
   }
 
-  // Render at ≥1.5× even on standard (DPR 1) monitors — supersampling keeps the
-  // thin copper traces and the lid marking crisp instead of soft / shimmering.
-  get pixelRatio() {
-    return Math.min(Math.max(window.devicePixelRatio || 1, 1.5), 2);
-  }
-
   #initRenderer() {
     const r = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, powerPreference: "high-performance" });
-    r.setPixelRatio(this.pixelRatio);
+    r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     r.setSize(window.innerWidth, window.innerHeight);
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;
@@ -72,7 +71,7 @@ export class ChipEngine {
 
   #initScene(chipOptions) {
     const scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(BG, 42, 95);
+    scene.fog = new THREE.Fog(BG, 60, 130);
 
     this.pmrem = new THREE.PMREMGenerator(this.renderer);
     this.envTex = this.pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -92,12 +91,18 @@ export class ChipEngine {
     this.grid.material.opacity = 0.35;
     scene.add(this.grid);
 
-    this.chip = buildChip(createMaterials(), {
-      ...chipOptions,
-      anisotropy: this.renderer.capabilities.getMaxAnisotropy(),
-    });
+    // ---- package ----
+    const M = createMaterials();
+    this.seal = [M.ild, M.passiv, M.feol].map((mat) => ({ mat, opacity: mat.opacity, color: mat.color.clone() }));
+    this.chip = buildChip(M, chipOptions);
     this.chip.root.scale.setScalar(CHIP_SCALE);
     scene.add(this.chip.root);
+    this.siIdx = this.chip.layers.findIndex((L) => L.code === "Si");
+    this.siLayer = this.chip.layers[this.siIdx];
+
+    // ---- wafer + singulated die ----
+    this.fab = buildWafer({ die: 4 * CHIP_SCALE, dieThickness: this.siLayer.t * CHIP_SCALE });
+    scene.add(this.fab.group);
 
     this.camera = new THREE.PerspectiveCamera(32, window.innerWidth / window.innerHeight, 0.1, 200);
     this.scene = scene;
@@ -127,11 +132,11 @@ export class ChipEngine {
     let i = 0;
     while (i < centers.length - 1 && mid > centers[i + 1]) i++;
     const j = Math.min(i + 1, centers.length - 1);
-    const a = this.sections[i].scene;
-    const b = this.sections[j].scene;
+    const a = { w: 0, ...this.sections[i].scene };
+    const b = { w: 0, ...this.sections[j].scene };
     const span = Math.max(1, centers[j] - centers[i]);
     const f = mid < centers[0] ? 0 : smoothstep(clamp((mid - centers[i]) / span, 0, 1));
-    for (const k in a) this.tgt[k] = lerp(a[k], b[k] ?? a[k], f);
+    for (const k in a) this.tgt[k] = lerp(a[k], b[k], f);
 
     const max = document.documentElement.scrollHeight - window.innerHeight;
     this.scrollFrac = max > 0 ? clamp(window.scrollY / max, 0, 1) : 0;
@@ -144,7 +149,6 @@ export class ChipEngine {
   }
 
   resize() {
-    this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
@@ -164,6 +168,7 @@ export class ChipEngine {
 
   #frame() {
     const dt = Math.min(this.clock.getDelta(), 0.05);
+    this.time += dt;
     const { cur, tgt, ptr } = this;
     const k = 1 - Math.exp(-dt * (this.reduce ? 20 : 3.2));
     for (const p in tgt) cur[p] = lerp(cur[p], tgt[p], k);
@@ -171,14 +176,16 @@ export class ChipEngine {
     ptr.sy = lerp(ptr.sy, ptr.y, 1 - Math.exp(-dt * 3));
     if (!this.reduce) this.spin += dt * 0.07 * (1 - cur.e * 0.8);
 
-    // chip — when the lid is lifted it hovers with a gentle bob
-    this.t += dt;
-    const lift = (cur.lift ?? 0) * (1 + (this.reduce ? 0 : 0.035 * Math.sin(this.t * 1.4)));
-    const h = this.chip.layout(cur.e, lift);
+    // chip
+    const h = this.chip.layout(cur.e);
+    this.#applySeal(cur.e);
     const root = this.chip.root;
     root.rotation.y = cur.rot + this.spin + ptr.sx * 0.35;
     root.rotation.x = ptr.sy * 0.08;
     this.grid.position.y = (-h / 2 - 1.2) * CHIP_SCALE;
+
+    // wafer → die → package
+    this.#applyFab(cur.w);
 
     // camera orbit + horizontal framing offset
     const az = Math.PI / 4;
@@ -200,6 +207,80 @@ export class ChipEngine {
       ...(this.ready ? null : { ready: true }),
     });
     this.ready = true;
+  }
+
+  /**
+   * w = 1 : whole wafer, die still in its slot
+   * w = 0 : die packaged — the normal chip
+   *
+   * p = 1 - w drives the sequence:
+   *   0.00–0.22  laser scribes the centre die's streets
+   *   0.18–0.70  die lifts out, flips face-down (flip-chip), travels to its place in the stack
+   *   0.30–0.78  wafer sinks and fades away
+   *   0.50–1.00  package layers fly in and dock around the die
+   */
+  #applyFab(w) {
+    const p = clamp(1 - w, 0, 1);
+    const { group, waferGroup, cutDie, waferMat, dieMat, slotY } = this.fab;
+    const root = this.chip.root;
+    const layers = this.chip.layers;
+
+    // fab group follows the chip's yaw so the die lands aligned
+    group.rotation.copy(root.rotation);
+
+    const cut = ramp(p, 0.0, 0.22);
+    const lift = ramp(p, 0.18, 0.7);
+    const sink = ramp(p, 0.3, 0.78);
+    const asm = ramp(p, 0.5, 1.0);
+    const done = p > 0.985;
+
+    // ---- wafer ----
+    group.visible = !done;
+    waferGroup.visible = sink < 0.999;
+    waferGroup.position.y = -sink * 7;
+    waferMat.uniforms.uCut.value = cut;
+    waferMat.uniforms.uHole.value = ramp(p, 0.2, 0.3);
+    waferMat.uniforms.uOpacity.value = 1 - sink;
+    waferMat.uniforms.uTime.value = this.time;
+    waferMat.depthWrite = sink < 0.05;
+    dieMat.uniforms.uTime.value = this.time;
+
+    // ---- singulated die: slot → arc up → flip → silicon slot in the stack ----
+    const stack = root.children[0];
+    const si = this.siLayer;
+    const targetY = (stack.position.y + si.group.position.y + si.t / 2) * CHIP_SCALE;
+    const y = lerp(slotY, targetY, lift) + Math.sin(Math.PI * lift) * 4.2;
+    cutDie.position.set(0, y, 0);
+    cutDie.rotation.set(Math.PI * smoothstep(clamp((lift - 0.15) / 0.7, 0, 1)), 0, 0);
+    cutDie.visible = !done;
+
+    // ---- package assembles around the die ----
+    root.visible = asm > 0.001;
+    const maxDist = Math.max(this.siIdx, layers.length - 1 - this.siIdx);
+    layers.forEach((L, i) => {
+      if (i === this.siIdx) {
+        L.group.visible = done;
+        return;
+      }
+      const dist = Math.abs(i - this.siIdx) / maxDist;      // nearest layers dock first
+      const a = smoothstep(clamp((asm - dist * 0.55) / 0.45, 0, 1));
+      const dir = i > this.siIdx ? 1 : -1;
+      L.group.position.y += (1 - a) * dir * (5 + dist * 6);
+      L.group.visible = a > 0.001;
+      if (L.via) L.via.visible = a > 0.98;
+    });
+  }
+
+  // e: 1 = opened (see-through layers) → 0 = closed solid die, wiring hidden
+  #applySeal(e) {
+    const s = 1 - smoothstep(clamp(e / 0.18, 0, 1));
+    if (Math.abs(s - this.lastSeal) < 1e-3) return;
+    this.lastSeal = s;
+    for (const { mat, opacity, color } of this.seal) {
+      mat.opacity = lerp(opacity, 1, s);
+      mat.color.lerpColors(color, SEALED, s);
+      mat.depthWrite = s > 0.98;
+    }
   }
 
   #updateLabels(W, H) {

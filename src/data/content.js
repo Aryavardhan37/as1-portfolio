@@ -17,18 +17,19 @@ export const ANATOMY_GROUPS = [
 export const STATS = [
   { value: "3nm", label: "Smallest node" },
   { value: "04", label: "Tech nodes" },
-  { value: "02", label: "IEEE papers" },
+  { value: "06", label: "Papers" },
   { value: "₹1L", label: "Product grant" },
 ];
 
 export const SPEC_ROWS = [
-  ["Designation", "ASIC Physical Design Associate Engineer"],
+  ["Designation", "ASIC Physical Design Engineer"],
   ["Organisation", "eInfochips — An Arrow Company"],
   ["In service", "January 2025 → present"],
   ["Process nodes", "3nm · 14nm · 28nm · 32nm"],
   ["Flow coverage", "Synthesis → Floorplan → Place → CTS → Route → Signoff"],
   ["Toolchain", "Synopsys and Cadence suites"],
-  ["Education", "Bachelor of ICT, Embedded & VLSI — Marwadi University, 2021–2025 · CGPA 9.24 / 10"],
+  ["Education", "B.Tech, Information & Communication Technology (Embedded & VLSI) — Marwadi University, 2021–2025 · CGPA 9.24 / 10"],
+  ["IEEE", "Day 2025 Ambassador · R10 HTA Spotlight Volunteer · TCVLSI committee member"],
 ];
 
 export const SKILLS = [
@@ -45,7 +46,7 @@ export const EXPERIENCE = [
     rev: "Rev C",
     when: "Jan 2025 — Now",
     current: true,
-    role: "ASIC Physical Design Associate Engineer",
+    role: "ASIC Physical Design Engineer",
     org: "eInfochips — An Arrow Company · Ahmedabad",
     points: [
       "Backend implementation across the full physical design flow on multiple designs",
@@ -68,11 +69,18 @@ export const EXPERIENCE = [
     rev: "Rev A",
     when: "May — Jul 2023",
     role: "Research Intern",
-    org: "Marwadi University · Rajkot",
+    org: "ICT — Marwadi University · Rajkot",
     points: [
       "Turned research ideas into working prototypes with Python and IoT",
       "First research prototype, published at an IEEE international conference",
     ],
+  },
+  {
+    rev: "Rev 0",
+    when: "Jul 2022 — Nov 2024",
+    role: "General Secretary",
+    org: "Circuitology Club · Marwadi University",
+    points: ["Elected to lead the university's hardware-domain club"],
   },
 ];
 
@@ -98,20 +106,55 @@ export const PROJECTS = [
   { title: "Gen-AI Inference Server", text: "Cloud server for model inference, built during the Arishna internship.", tag: "Cloud · AI" },
 ];
 
+// IEEE Xplore search link for papers without a known document URL
+const xplore = (title) =>
+  `https://ieeexplore.ieee.org/search/searchresult.jsp?newsearch=true&queryText=${encodeURIComponent(`"${title}"`)}`;
+
 export const PUBLICATIONS = [
   {
     type: "IEEE Conference",
-    year: "2023",
-    title: "Sensor-Node Based Smart Irrigation System with IoT Framework",
-    venue: "IEEE Int. Conf. on Electrical, Electronics, Communication and Computers · IIT Roorkee",
-    url: "https://ieeexplore.ieee.org/document/10370640",
+    year: "2025",
+    title:
+      "Comprehensive Analysis of Multi-Objective Optimization Strategies in Physical Design: A Comparative Study of Timing, Congestion, and Hybrid-Driven Approaches with Clock Tree and Power Optimization",
+    venue: "IEEE ICONAT 2025 · 4th Int. Conf. for Advancement in Technology",
+    url: xplore("Comprehensive Analysis of Multi-Objective Optimization Strategies in Physical Design"),
+  },
+  {
+    type: "IEEE Conference",
+    year: "2025",
+    title:
+      "Review of Cutting-Edge Latest Trends and Innovations in Low-Power VLSI Physical Design Techniques for Next-Gen AI/ML Hardware",
+    venue: "IEEE ASIANCON 2025 · 5th Asian Conf. on Innovation in Technology",
+    url: xplore("Review of Cutting-Edge Latest Trends and Innovations in Low-Power VLSI Physical Design Techniques"),
+  },
+  {
+    type: "IEEE Conference",
+    year: "2025",
+    title: "A Novel Framework for Decoding Inter-Species Communication with Octopodes (DISC-O)",
+    venue: "OCEANS 2025 · Great Lakes",
+    url: xplore("A Novel Framework for Decoding Inter-Species Communication with Octopodes"),
+  },
+  {
+    type: "IEEE Conference",
+    year: "2025",
+    title: "Cephalopod AR: An Interactive Marine Biology Learning Experience through Augmented Reality",
+    venue: "IEEE ISMAR-Adjunct 2025 · pp. 941–942",
+    url: xplore("Cephalopod AR: An Interactive Marine Biology Learning Experience through Augmented Reality"),
   },
   {
     type: "IEEE Conference",
     year: "2023",
-    title: "How Effective is Game Based Learning for Teaching Graph Theory Concepts? A Case Study of Treasure Hunt Game",
-    venue: "IEEE Region 10 Humanitarian Technology Conference · Marwadi University",
+    title:
+      "How Effective is Game Based Learning for Teaching Graph Theory Concepts?: A Case Study of the Treasure Hunt Game",
+    venue: "IEEE R10-HTC 2023 · 11th Region 10 Humanitarian Technology Conference",
     url: "https://ieeexplore.ieee.org/document/10461843",
+  },
+  {
+    type: "IEEE Conference",
+    year: "2023",
+    title: "Sensor Node-Based Smart Irrigation System with IoT Framework",
+    venue: "IEEE ELEXCOM 2023 · Int. Conf. on Electrical, Electronics, Communication and Computers",
+    url: "https://ieeexplore.ieee.org/document/10370640",
   },
   {
     type: "Copyright",
@@ -123,9 +166,13 @@ export const PUBLICATIONS = [
 ];
 
 export const RECOGNITION = [
+  { title: "IEEE Day 2025 Ambassador", text: "Selected ambassador for IEEE Day 2025", badge: "Ambassador" },
+  { title: "IEEE R10 HTA Spotlight Volunteer", text: "Recognised by IEEE Region 10 Humanitarian Technology Activities", badge: "Spotlight" },
   { title: "Product-development grant — ₹1,00,000", text: "NewGEN-IEDC (Government initiative) for ARICA", badge: "Grant" },
   { title: "AIU Anveshan 2023", text: "Finalist, national-level student research convention", badge: "Finalist" },
   { title: "IEEEXtreme 17.0", text: "Gujarat Section Lead at the international programming competition", badge: "Lead" },
-  { title: "IEEE MEFGI WIE", text: "Co-Chair, Executive Committee", badge: "Co-Chair" },
+  { title: "IEEE R10-HTC 2023", text: "Transportation & accommodation volunteer for international delegates", badge: "Volunteer" },
+  { title: "IEEE TCVLSI", text: "Committee member", badge: "Member" },
+  { title: "IEEE WIE MEFGI", text: "Vice-Chair, Executive Committee ’23", badge: "Vice-Chair" },
   { title: "Circuitology Club", text: "Elected General Secretary of the hardware club", badge: "Gen. Sec." },
 ];

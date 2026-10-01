@@ -6,7 +6,7 @@ import HUD from "./components/HUD.jsx";
 import SideIndex from "./components/SideIndex.jsx";
 import Marquee from "./components/Marquee.jsx";
 import Footer from "./components/Footer.jsx";
-
+import Singulation from "./sections/Singulation.jsx";
 import Hero from "./sections/Hero.jsx";
 import Anatomy from "./sections/Anatomy.jsx";
 import Spec from "./sections/Spec.jsx";
@@ -29,6 +29,7 @@ export default function App() {
       <main>
         <Hero />
         <Marquee />
+        <Singulation />
         <Anatomy />
         <Spec />
         <Experience />

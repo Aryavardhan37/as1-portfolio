@@ -227,7 +227,7 @@ export function buildChip(M, { mark = "AS·1", lidLines = [], anisotropy = 8 } =
         polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
       })
     );
-    etch.rotation.set(-Math.PI / 2, 0, Math.PI);
+    etch.rotation.set(-Math.PI / 2, 0, 0);
     etch.position.y = 0.26;
     g.add(etch);
     addLayer("LID", "Integrated heat spreader", 0.26, g, 2.7);

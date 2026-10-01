@@ -38,10 +38,12 @@ export default function Hero() {
           <a href="#anatomy" className="btn solid">Inspect the stack ↓</a>
           <a href="#contact" className="btn">Get in touch →</a>
         </Reveal>
-      </div>
-      <div className="tag">
-        {a} <b>{b}</b>
-        {c}
+        <Reveal delay={3} className="tag">
+          <span>
+            {a} <b>{b}</b>
+            {c}
+          </span>
+        </Reveal>
       </div>
     </Chapter>
   );

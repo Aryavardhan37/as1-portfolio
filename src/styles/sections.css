@@ -7,10 +7,27 @@
 .hero .strip div { display: grid; gap: 4px; }
 .hero .strip b { font-family: var(--display); font-weight: 500; font-size: 14px; color: var(--ink); }
 .tag {
-  position: absolute; left: var(--gutter); bottom: 110px;
-  font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; color: var(--ink3); text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--ink3);
+  text-transform: uppercase;
 }
-.tag b { color: var(--ink); font-weight: 400; }
+.tag::before {
+  content: "";
+  flex: 0 0 32px;
+  height: 1px;
+  background: var(--accent);
+  opacity: 0.6;
+}
+.tag b {
+  color: var(--ink);
+  font-weight: 400;
+}
 
 /* ── Anatomy ──────────────────────────────────────── */
 #anatomy h2 { font-size: clamp(38px, 4.4vw, 64px); }
